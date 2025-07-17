@@ -235,6 +235,8 @@
   <audio id="dangsanAudio" src="dangsan.mp3"></audio>
   <audio id="mok6Audio" src="mok6.mp3"></audio>
   <audio id="mok5bAudio" src="mok5b.wav"></audio>
+  <audio id="mok5cAudio" src="paris.wav"></audio>
+  <audio id="mokStadiumAudio" src="mok5c.wav"></audio>
 
   <script>
     // 전역 변수들
@@ -499,8 +501,8 @@
       scrollLcd.style.display = 'block';
       centerLine.style.display = 'block';
       
-      // 목동5단지B상가는 가운데 정렬, 나머지는 스크롤
-      if (station.name === '목동5단지B상가') {
+      // 목동5단지B상가와 목5동주민센터는 가운데 정렬, 나머지는 스크롤
+      if (station.name === '목동5단지B상가' || station.name === '목동5단지C상가') {
         scrollLcd.style.left = '50%';
         scrollLcd.style.top = '50%';
         scrollLcd.style.transform = 'translateX(-50%) translateY(0%)';
@@ -545,7 +547,11 @@
 
           // 다음 정류소 텍스트 설정
           let nextStationText = '';
-          if (station.name === '목동5단지B상가') {
+          if (station.name === '목동야구장') {
+            nextStationText = '목5동주민센터';
+          } else if (station.name === '목동5단지C상가') {
+            nextStationText = '목동5단지B상가';
+          } else if (station.name === '목동5단지B상가') {
             nextStationText = '목동6단지상가,이대병원입구';
           } else if (station.name === '목동6단지상가') {
             nextStationText = '양평한신아파트, 9호선선유도역';
@@ -557,23 +563,32 @@
           
           scrollLcd.textContent = nextStationText;
           scrollLcd.style.color = 'yellow';
-          scrollLcd.style.left = '0';
-          scrollLcd.style.top = '50%';
-          scrollLcd.style.transform = 'translateY(0%)';
-          scrollLcd.style.transition = 'none';
           scrollLcd.style.display = 'block';
 
+          // 다음 정류소가 목동5단지B상가, 목5동주민센터, 목동야구장인 경우 가운데 정렬
+          if (nextStationText === '목동5단지B상가' || nextStationText === '목5동주민센터' || nextStationText === '목동야구장,행복한세상') {
+            scrollLcd.style.left = '50%';
+            scrollLcd.style.top = '50%';
+            scrollLcd.style.transform = 'translateX(-50%) translateY(0%)';
+            scrollLcd.style.transition = 'none';
+          } else {
+            scrollLcd.style.left = '0';
+            scrollLcd.style.top = '50%';
+            scrollLcd.style.transform = 'translateY(0%)';
+            scrollLcd.style.transition = 'none';
+            
+            // 다음 정류소 텍스트도 스크롤 애니메이션 적용
+            const nextTextWidth = scrollLcd.scrollWidth;
+            const nextTotalDistance = nextTextWidth + containerWidth;
+            const nextDuration = nextTotalDistance / speed;
+
+            setTimeout(() => {
+              scrollLcd.style.transition = `transform ${nextDuration}s linear`;
+              scrollLcd.style.transform = `translateX(-${nextTotalDistance}px)`;
+            }, 500);
+          }
+
           centerLine.style.display = 'block';
-
-          // 다음 정류소 텍스트도 스크롤 애니메이션 적용
-          const nextTextWidth = scrollLcd.scrollWidth;
-          const nextTotalDistance = nextTextWidth + containerWidth;
-          const nextDuration = nextTotalDistance / speed;
-
-          setTimeout(() => {
-            scrollLcd.style.transition = `transform ${nextDuration}s linear`;
-            scrollLcd.style.transform = `translateX(-${nextTotalDistance}px)`;
-          }, 500);
         }, 500);
       }, 5380);
 
@@ -585,7 +600,11 @@
 
         // 영어 텍스트 설정
         let engText = '';
-        if (station.name === '목동5단지B상가') {
+        if (station.name === '목동야구장') {
+          engText = 'Mokdong Baseball Stadium, Happy World';
+        } else if (station.name === '목동5단지C상가') {
+          engText = 'Mok 5dong Office';
+        } else if (station.name === '목동5단지B상가') {
           engText = 'Mokdong 5 Danji B Store';
         } else if (station.name === '목동6단지상가') {
           engText = 'Mokdong 6 Danji Store, Ewha Womans Univ. Mok-dong Hospital';
@@ -626,7 +645,11 @@
 
           // 영어 다음 정류소 텍스트 설정
           let engNextText = '';
-          if (station.name === '목동5단지B상가') {
+          if (station.name === '목동야구장') {
+            engNextText = 'Mok 5dong Office';
+          } else if (station.name === '목동5단지C상가') {
+            engNextText = 'Mokdong 5 Danji B Store';
+          } else if (station.name === '목동5단지B상가') {
             engNextText = 'Mokdong 6 Danji Store, Ewha Womans Univ. Mok-dong Hospital';
           } else if (station.name === '목동6단지상가') {
             engNextText = 'Yangpyeong Hanshin Apt. Line 9 Seonyudo Station';
@@ -704,6 +727,20 @@
 
     // 목표 위치들 (정류소 위치들)
     const stations = [
+      {
+        name: '목동야구장',
+        lat: 37.525889,
+        lon: 126.875272,
+        audio: 'mokStadiumAudio',
+        displayText: '목동야구장,행복한세상'
+      },
+      {
+        name: '목동5단지C상가',
+        lat: 37.531090,
+        lon: 126.876995,
+        audio: 'mok5cAudio',
+        displayText: '목5동주민센터'
+      },
       {
         name: '목동5단지B상가',
         lat: 37.535277,
@@ -789,21 +826,55 @@
     const testBtnContainer = document.createElement('div');
     testBtnContainer.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 1000; display: flex; flex-direction: row; gap: 10px; flex-wrap: wrap; max-width: 800px;';
     
-    // 목동5단지B 테스트 버튼
-    const mok5bTestBtn = document.createElement('button');
-    mok5bTestBtn.textContent = '🔊 목동5단지B 안내 시작';
-    mok5bTestBtn.style.cssText = 'padding: 15px 20px; background: #aa44aa; color: white; border: 3px solid #882288; border-radius: 10px; cursor: pointer; font-size: 16px; font-weight: bold; box-shadow: 0 4px 8px rgba(0,0,0,0.3);';
-    mok5bTestBtn.onclick = () => {
-      console.log('목동5단지B 테스트 버튼 클릭');
+    // 목동야구장 테스트 버튼
+    const mokStadiumTestBtn = document.createElement('button');
+    mokStadiumTestBtn.textContent = '🔊 목동야구장 안내 시작';
+    mokStadiumTestBtn.style.cssText = 'padding: 15px 20px; background: #ff8800; color: white; border: 3px solid #cc6600; border-radius: 10px; cursor: pointer; font-size: 16px; font-weight: bold; box-shadow: 0 4px 8px rgba(0,0,0,0.3);';
+    mokStadiumTestBtn.onclick = () => {
+      console.log('목동야구장 테스트 버튼 클릭');
       if (!userInteracted) {
         userInteracted = true;
-        console.log('목동5단지B 테스트 버튼 클릭으로 사용자 상호작용 감지');
+        console.log('목동야구장 테스트 버튼 클릭으로 사용자 상호작용 감지');
+        const mokStadiumAudio = document.getElementById('mokStadiumAudio');
+        if (mokStadiumAudio) {
+          mokStadiumAudio.load();
+        }
+      }
+      startStationAnnouncement(stations[0]);
+    };
+    
+    // 목동5단지C상가 테스트 버튼
+    const mok5cTestBtn = document.createElement('button');
+    mok5cTestBtn.textContent = '🔊 목동5단지C상가 안내 시작';
+    mok5cTestBtn.style.cssText = 'padding: 15px 20px; background: #8800ff; color: white; border: 3px solid #6600cc; border-radius: 10px; cursor: pointer; font-size: 16px; font-weight: bold; box-shadow: 0 4px 8px rgba(0,0,0,0.3);';
+    mok5cTestBtn.onclick = () => {
+      console.log('목동5단지C상가 테스트 버튼 클릭');
+      if (!userInteracted) {
+        userInteracted = true;
+        console.log('목동5단지C상가 테스트 버튼 클릭으로 사용자 상호작용 감지');
+        const mok5cAudio = document.getElementById('mok5cAudio');
+        if (mok5cAudio) {
+          mok5cAudio.load();
+        }
+      }
+      startStationAnnouncement(stations[1]);
+    };
+    
+    // 목동5단지B상가 테스트 버튼
+    const mok5bTestBtn = document.createElement('button');
+    mok5bTestBtn.textContent = '🔊 목동5단지B상가 안내 시작';
+    mok5bTestBtn.style.cssText = 'padding: 15px 20px; background: #aa44aa; color: white; border: 3px solid #882288; border-radius: 10px; cursor: pointer; font-size: 16px; font-weight: bold; box-shadow: 0 4px 8px rgba(0,0,0,0.3);';
+    mok5bTestBtn.onclick = () => {
+      console.log('목동5단지B상가 테스트 버튼 클릭');
+      if (!userInteracted) {
+        userInteracted = true;
+        console.log('목동5단지B상가 테스트 버튼 클릭으로 사용자 상호작용 감지');
         const mok5bAudio = document.getElementById('mok5bAudio');
         if (mok5bAudio) {
           mok5bAudio.load();
         }
       }
-      startStationAnnouncement(stations[0]);
+      startStationAnnouncement(stations[2]);
     };
     
     // 목동6단지상가 테스트 버튼
@@ -820,7 +891,7 @@
           mok6Audio.load();
         }
       }
-      startStationAnnouncement(stations[1]);
+      startStationAnnouncement(stations[3]);
     };
     
     // 선유도역 테스트 버튼
@@ -837,7 +908,7 @@
           audio.load();
         }
       }
-      startStationAnnouncement(stations[2]);
+      startStationAnnouncement(stations[4]);
     };
     
     // 당산역 테스트 버튼
@@ -854,9 +925,11 @@
           dangsanAudio.load();
         }
       }
-      startStationAnnouncement(stations[3]);
+      startStationAnnouncement(stations[5]);
     };
     
+    testBtnContainer.appendChild(mokStadiumTestBtn);
+    testBtnContainer.appendChild(mok5cTestBtn);
     testBtnContainer.appendChild(mok5bTestBtn);
     testBtnContainer.appendChild(mok6TestBtn);
     testBtnContainer.appendChild(seonyudoTestBtn);
