@@ -226,6 +226,8 @@
   </div>
 
   <audio id="announcement" src="sunyudo.mp3"></audio>
+  <audio id="dangsanAudio" src="dangsan.mp3"></audio>
+  <audio id="mok6Audio" src="mok6.mp3"></audio>
 
   <script>
     // 전역 변수들
@@ -464,8 +466,9 @@
       display2Btn.classList.remove('active');
     }
 
-    function switchToDisplay2() {
-      console.log('switchToDisplay2 함수 호출됨');
+    // 정류소별 안내 함수
+    function startStationAnnouncement(station) {
+      console.log(`${station.name} 정류소 안내 시작`);
       currentDisplay = 2;
       
       // 첫 번째 디스플레이 정지
@@ -474,14 +477,177 @@
         console.log('첫 번째 디스플레이 타이머 정지됨');
       }
       
-      // 두 번째 디스플레이 시작
-      console.log('두 번째 디스플레이 시작...');
-      startDisplay2();
+      // 모든 첫 번째 디스플레이 요소 숨기기
+      title.style.display = 'none';
+      scrollTexts.forEach(item => document.getElementById(item.id).style.display = 'none');
+      thirdTop.style.display = 'none';
+      thirdBottom.style.display = 'none';
+      fourthTop.style.display = 'none';
+      fourthBottom.style.display = 'none';
+      
+      // 두 번째 디스플레이 요소들 표시
+      topLabel.textContent = '이번 정류소';
+      topLabel.style.display = 'block';
+      scrollLcd.textContent = station.displayText;
+      scrollLcd.style.display = 'block';
+      centerLine.style.display = 'block';
+      
+      const textWidth = scrollLcd.scrollWidth;
+      const totalDistance = textWidth + containerWidth;
+      const duration = totalDistance / speed;
+
+      scrollLcd.style.transform = 'translateX(0)';
+      scrollLcd.style.transition = 'none';
+      
+      // 해당 정류소 오디오 재생
+      const stationAudio = document.getElementById(station.audio);
+      if (userInteracted && stationAudio) {
+        stationAudio.volume = 1.0;
+        stationAudio.play().catch(error => {
+          console.log(`${station.name} 오디오 재생 실패:`, error);
+        });
+      } else {
+        console.log('사용자 상호작용이 없어서 오디오 재생 건너뜀');
+      }
+
+      setTimeout(() => {
+        scrollLcd.style.transition = `transform ${duration}s linear`;
+        scrollLcd.style.transform = `translateX(-${totalDistance}px)`;
+      }, 500);
+
+      // 5.38초 후 → 첫 화면 숨기고 → 다음 정류소 표시
+      display2Timeout = setTimeout(() => {
+        scrollLcd.style.display = 'none';
+        topLabel.style.display = 'none';
+        centerLine.style.display = 'none';
+
+        setTimeout(() => {
+          topLabel.textContent = '다음 정류소';
+          topLabel.style.color = 'lime';
+          topLabel.style.display = 'block';
+
+          // 다음 정류소 텍스트 설정
+          let nextStationText = '';
+          if (station.name === '목동6단지상가') {
+            nextStationText = '양평한신아파트, 9호선선유도역';
+          } else if (station.name === '선유도역') {
+            nextStationText = '지하철 2,9호선 당산역';
+          } else if (station.name === '당산역') {
+            nextStationText = '양평한신아파트, 9호선선유도역';
+          }
+          
+          scrollLcd.textContent = nextStationText;
+          scrollLcd.style.color = 'yellow';
+          scrollLcd.style.left = '0';
+          scrollLcd.style.top = '50%';
+          scrollLcd.style.transform = 'translateY(0%)';
+          scrollLcd.style.transition = 'none';
+          scrollLcd.style.display = 'block';
+
+          centerLine.style.display = 'block';
+
+          // 다음 정류소 텍스트도 스크롤 애니메이션 적용
+          const nextTextWidth = scrollLcd.scrollWidth;
+          const nextTotalDistance = nextTextWidth + containerWidth;
+          const nextDuration = nextTotalDistance / speed;
+
+          setTimeout(() => {
+            scrollLcd.style.transition = `transform ${nextDuration}s linear`;
+            scrollLcd.style.transform = `translateX(-${nextTotalDistance}px)`;
+          }, 500);
+        }, 500);
+      }, 5380);
+
+      // 12초 후 → 영어 안내로 교체
+      setTimeout(() => {
+        topLabel.textContent = 'THIS STOP IS';
+        topLabel.style.color = 'lime';
+        topLabel.style.display = 'block';
+
+        // 영어 텍스트 설정
+        let engText = '';
+        if (station.name === '목동6단지상가') {
+          engText = 'Mokdong 6 Danji Store, Ewha Womans Univ. Mok-dong Hospital';
+        } else if (station.name === '선유도역') {
+          engText = 'Yangpyeong Hanshin Apt. Line 9 Seonyudo Station';
+        } else if (station.name === '당산역') {
+          engText = 'Line 2,9 Dangsan Station';
+        }
+
+        scrollLcd.textContent = engText;
+        scrollLcd.style.color = 'yellow';
+        scrollLcd.style.left = '0';
+        scrollLcd.style.top = '50%';
+        scrollLcd.style.transform = 'translateY(0%)';
+        scrollLcd.style.transition = 'none';
+        scrollLcd.style.display = 'block';
+
+        const engTextWidth = scrollLcd.scrollWidth;
+        const engTotalDistance = engTextWidth + containerWidth;
+        const engDuration = engTotalDistance / speed;
+
+        setTimeout(() => {
+          scrollLcd.style.transition = `transform ${engDuration}s linear`;
+          scrollLcd.style.transform = `translate(-${engTotalDistance}px, 0%)`;
+        }, 500);
+      }, 12000);
+
+      // 21.85초 후 → 모두 숨김 (0.5초)
+      setTimeout(() => {
+        topLabel.style.display = 'none';
+        scrollLcd.style.display = 'none';
+        centerLine.style.display = 'none';
+
+        setTimeout(() => {
+          topLabel.textContent = 'NEXT STOP IS';
+          topLabel.style.color = 'lime';
+          topLabel.style.display = 'block';
+
+          // 영어 다음 정류소 텍스트 설정
+          let engNextText = '';
+          if (station.name === '목동6단지상가') {
+            engNextText = 'Yangpyeong Hanshin Apt. Line 9 Seonyudo Station';
+          } else if (station.name === '선유도역') {
+            engNextText = 'Line 2,9 Dangsan Station';
+          } else if (station.name === '당산역') {
+            engNextText = 'Yangpyeong Hanshin Apt. Line 9 Seonyudo Station';
+          }
+
+          scrollLcd.textContent = engNextText;
+          scrollLcd.style.color = 'yellow';
+          scrollLcd.style.left = '0';
+          scrollLcd.style.top = '50%';
+          scrollLcd.style.transform = 'translateY(0%)';
+          scrollLcd.style.transition = 'none';
+          scrollLcd.style.display = 'block';
+
+          centerLine.style.display = 'block';
+
+          const eng2Width = scrollLcd.scrollWidth;
+          const eng2TotalDistance = eng2Width + containerWidth;
+          const eng2Duration = eng2TotalDistance / speed;
+
+          setTimeout(() => {
+            scrollLcd.style.transition = `transform ${eng2Duration}s linear`;
+            scrollLcd.style.transform = `translate(-${eng2TotalDistance}px, 0%)`;
+            
+            // 정류소 안내 완료 후 안내 문구로 자동 전환
+            setTimeout(() => {
+              switchToDisplay1();
+            }, (eng2Duration + 0.5) * 1000);
+          }, 500);
+        }, 500);
+      }, 21850);
       
       // 버튼 스타일 업데이트
       display2Btn.classList.add('active');
       display1Btn.classList.remove('active');
-      console.log('버튼 스타일 업데이트 완료');
+    }
+
+    function switchToDisplay2() {
+      console.log('switchToDisplay2 함수 호출됨');
+      // 기본적으로 목동6단지상가로 시작
+      startStationAnnouncement(stations[0]);
     }
 
     // 이벤트 리스너
@@ -513,10 +679,31 @@
       }
     }, { once: true });
 
-    // 목표 위치 (정류소 위치)
-    const targetLat = 37.539756;
-    const targetLon = 126.887565;
-    const targetRadius = 100; // 500미터 반경
+    // 목표 위치들 (정류소 위치들)
+    const stations = [
+      {
+        name: '목동6단지상가',
+        lat: 37.536231,
+        lon: 126.882298,
+        audio: 'mok6Audio',
+        displayText: '목동6단지상가,이대병원입구'
+      },
+      {
+        name: '선유도역',
+        lat: 37.539756,
+        lon: 126.887565,
+        audio: 'announcement',
+        displayText: '양평한신아파트, 9호선선유도역'
+      },
+      {
+        name: '당산역',
+        lat: 37.537096,
+        lon: 126.900256,
+        audio: 'dangsanAudio',
+        displayText: '지하철 2,9호선 당산역'
+      }
+    ];
+    const targetRadius = 100; // 100미터 반경
     
     // 두 지점 간의 거리 계산 함수 (미터 단위)
     function calculateDistance(lat1, lon1, lat2, lon2) {
@@ -534,22 +721,33 @@
     navigator.geolocation.watchPosition(pos => {
       const lat = pos.coords.latitude;
       const lon = pos.coords.longitude;
-      const distance = calculateDistance(lat, lon, targetLat, targetLon);
       
-      locationDisplay.textContent = `위치: ${lat.toFixed(6)}, ${lon.toFixed(6)} (거리: ${distance.toFixed(0)}m)`;
+      // 가장 가까운 정류소 찾기
+      let nearestStation = null;
+      let minDistance = Infinity;
+      
+      stations.forEach(station => {
+        const distance = calculateDistance(lat, lon, station.lat, station.lon);
+        if (distance < minDistance) {
+          minDistance = distance;
+          nearestStation = station;
+        }
+      });
+      
+      locationDisplay.textContent = `위치: ${lat.toFixed(6)}, ${lon.toFixed(6)} (가장 가까운 정류소: ${nearestStation.name} ${minDistance.toFixed(0)}m)`;
       
       // 디버깅을 위한 로그 추가
-      console.log(`현재 거리: ${distance.toFixed(0)}m, 목표 반경: ${targetRadius}m, 현재 디스플레이: ${currentDisplay}`);
+      console.log(`현재 거리: ${minDistance.toFixed(0)}m, 목표 반경: ${targetRadius}m, 현재 디스플레이: ${currentDisplay}, 가장 가까운 정류소: ${nearestStation.name}`);
       
       // 목표 위치 100m 이내에 있고, 현재 안내 문구 모드일 때 자동으로 정류소 안내 시작
-      if (distance <= targetRadius && currentDisplay === 1) {
-        console.log(`정류소 근처 도착! (거리: ${distance.toFixed(0)}m) 자동으로 정류소 안내 시작`);
-        switchToDisplay2();
+      if (minDistance <= targetRadius && currentDisplay === 1) {
+        console.log(`${nearestStation.name} 근처 도착! (거리: ${minDistance.toFixed(0)}m) 자동으로 정류소 안내 시작`);
+        startStationAnnouncement(nearestStation);
       }
       
       // 100m 밖으로 나가면 안내 문구로 돌아가기 (디버깅용)
-      if (distance > targetRadius && currentDisplay === 2) {
-        console.log(`정류소에서 멀어짐! (거리: ${distance.toFixed(0)}m) 안내 문구로 돌아가기`);
+      if (minDistance > targetRadius && currentDisplay === 2) {
+        console.log(`정류소에서 멀어짐! (거리: ${minDistance.toFixed(0)}m) 안내 문구로 돌아가기`);
         // 주의: 이 기능은 테스트용이므로 실제 사용 시에는 주석 처리하세요
         // switchToDisplay1();
       }
@@ -557,24 +755,65 @@
       console.warn('GPS error:', err);
     }, { enableHighAccuracy: true });
 
-    // 항상 테스트 버튼 표시 (GPS 오류와 관계없이)
-    const testBtn = document.createElement('button');
-    testBtn.id = 'testBtn';
-    testBtn.textContent = '🔊 정류소 안내 시작 (오디오 포함)';
-    testBtn.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 1000; padding: 15px 20px; background: #ff4444; color: white; border: 3px solid #cc0000; border-radius: 10px; cursor: pointer; font-size: 16px; font-weight: bold; box-shadow: 0 4px 8px rgba(0,0,0,0.3);';
-    testBtn.onclick = () => {
-      console.log('테스트 버튼 클릭: 정류소 안내 시작');
-      // 테스트 버튼 클릭 시 사용자 상호작용으로 간주
+    // 테스트 버튼들 생성
+    const testBtnContainer = document.createElement('div');
+    testBtnContainer.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 1000; display: flex; flex-direction: column; gap: 10px;';
+    
+    // 목동6단지상가 테스트 버튼
+    const mok6TestBtn = document.createElement('button');
+    mok6TestBtn.textContent = '🔊 목동6단지상가 안내 시작';
+    mok6TestBtn.style.cssText = 'padding: 15px 20px; background: #44aa44; color: white; border: 3px solid #228822; border-radius: 10px; cursor: pointer; font-size: 16px; font-weight: bold; box-shadow: 0 4px 8px rgba(0,0,0,0.3);';
+    mok6TestBtn.onclick = () => {
+      console.log('목동6단지상가 테스트 버튼 클릭');
       if (!userInteracted) {
         userInteracted = true;
-        console.log('테스트 버튼 클릭으로 사용자 상호작용 감지');
+        console.log('목동6단지상가 테스트 버튼 클릭으로 사용자 상호작용 감지');
+        const mok6Audio = document.getElementById('mok6Audio');
+        if (mok6Audio) {
+          mok6Audio.load();
+        }
+      }
+      startStationAnnouncement(stations[0]);
+    };
+    
+    // 선유도역 테스트 버튼
+    const seonyudoTestBtn = document.createElement('button');
+    seonyudoTestBtn.textContent = '🔊 선유도역 안내 시작';
+    seonyudoTestBtn.style.cssText = 'padding: 15px 20px; background: #ff4444; color: white; border: 3px solid #cc0000; border-radius: 10px; cursor: pointer; font-size: 16px; font-weight: bold; box-shadow: 0 4px 8px rgba(0,0,0,0.3);';
+    seonyudoTestBtn.onclick = () => {
+      console.log('선유도역 테스트 버튼 클릭');
+      if (!userInteracted) {
+        userInteracted = true;
+        console.log('선유도역 테스트 버튼 클릭으로 사용자 상호작용 감지');
+        const audio = document.getElementById('announcement');
         if (audio) {
           audio.load();
         }
       }
-      switchToDisplay2();
+      startStationAnnouncement(stations[1]);
     };
-    document.body.appendChild(testBtn);
+    
+    // 당산역 테스트 버튼
+    const dangsanTestBtn = document.createElement('button');
+    dangsanTestBtn.textContent = '🔊 당산역 안내 시작';
+    dangsanTestBtn.style.cssText = 'padding: 15px 20px; background: #4444ff; color: white; border: 3px solid #0000cc; border-radius: 10px; cursor: pointer; font-size: 16px; font-weight: bold; box-shadow: 0 4px 8px rgba(0,0,0,0.3);';
+    dangsanTestBtn.onclick = () => {
+      console.log('당산역 테스트 버튼 클릭');
+      if (!userInteracted) {
+        userInteracted = true;
+        console.log('당산역 테스트 버튼 클릭으로 사용자 상호작용 감지');
+        const dangsanAudio = document.getElementById('dangsanAudio');
+        if (dangsanAudio) {
+          dangsanAudio.load();
+        }
+      }
+      startStationAnnouncement(stations[2]);
+    };
+    
+    testBtnContainer.appendChild(mok6TestBtn);
+    testBtnContainer.appendChild(seonyudoTestBtn);
+    testBtnContainer.appendChild(dangsanTestBtn);
+    document.body.appendChild(testBtnContainer);
     
     // 추가로 오디오 활성화 버튼도 표시
     const audioBtn = document.createElement('button');
