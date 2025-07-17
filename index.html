@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>버스 안내 전광판 (통합)</title>
+  <style>
+    @font-face {
+      font-family: 'HY견고딕';
+      src: url('HY견고딕.ttf') format('truetype');
+    }
+    body {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      margin: 0;
+      background-color: white;
+      height: 100vh;
+      gap: 20px;
+    }
+    .square {
+      position: relative;
+      width: 1280px;
+      height: 320px;
+      background-color: rgb(33, 33, 33);
+      border: 20px solid rgb(20, 20, 20);
+      overflow: hidden;
+    }
+    .grid-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: grid;
+      grid-template-columns: repeat(128, 1fr);
+      grid-template-rows: repeat(32, 1fr);
+      z-index: 2;
+      pointer-events: none;
+    }
+    .cell { border: 0.5px solid rgb(60, 60, 60); aspect-ratio: 1 / 1; }
+    .title {
+      position: absolute;
+      top: 5px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: yellow;
+      font-size: 120px;
+      font-family: 'HY견고딕';
+      z-index: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .title span { margin: 0 100px; }
+    .scroll-text {
+      position: absolute;
+      bottom: 20px;
+      white-space: nowrap;
+      font-size: 120px;
+      font-family: 'HY견고딕';
+      z-index: 1;
+      display: none;
+      transform: translateX(0);
+    }
+    .yellow { color: yellow; }
+    .orange { color: orange; }
+    .red { color: red; }
+    .green { color: lime; }
+    .third-top, .third-bottom, .fourth-top, .fourth-bottom {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 100px;
+      font-family: 'HY견고딕';
+      z-index: 1;
+      display: none;
+      white-space: nowrap;
+    }
+    .third-top { top: 20px; }
+    .third-bottom { bottom: 20px; }
+    .fourth-top { top: 20px; }
+    .fourth-bottom { bottom: 20px; }
+    .location-display {
+      position: absolute;
+      top: 5px;
+      left: 5px;
+      color: yellow;
+      font-size: 20px;
+      font-family: monospace;
+      z-index: 3;
+      background: rgba(0,0,0,0.5);
+      padding: 3px 8px;
+      border-radius: 8px;
+    }
+    
+    /* 두 번째 디스플레이 스타일 */
+    .top-label {
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 110px;
+      font-family: 'HY견고딕';
+      color: lime;
+      z-index: 1;
+      white-space: nowrap;
+      display: none;
+    }
+    .scroll-lcd {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      white-space: nowrap;
+      font-size: 110px;
+      font-family: 'HY견고딕';
+      color: yellow;
+      z-index: 1;
+      left: 0;
+      display: none;
+    }
+    .center-line {
+      position: absolute;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: red;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 3;
+      display: none;
+    }
+    
+    /* 버튼 스타일 */
+    .control-buttons {
+      display: flex;
+      gap: 10px;
+    }
+    .control-btn {
+      padding: 10px 20px;
+      font-size: 16px;
+      font-family: 'HY견고딕', sans-serif;
+      background-color: #333;
+      color: white;
+      border: 2px solid #555;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .control-btn:hover {
+      background-color: #555;
+      border-color: #777;
+    }
+    .control-btn.active {
+      background-color: #007bff;
+      border-color: #0056b3;
+    }
+  </style>
+</head>
+<body>
+  <div class="square">
+    <!-- 첫 번째 디스플레이 요소들 -->
+    <div class="title" id="title"><span>알</span><span>림</span></div>
+
+    <!-- 스크롤 문구 1~8 -->
+    <div class="scroll-text" id="scroll-text-1">
+      <span class="yellow">버스가 주행중에는 자리에서 </span><span class="red">이동을 삼가하시고</span>
+      <span class="green">내리실분은 앉은자리에서 </span><span class="red">벨을</span>
+      <span class="yellow">미리 눌러주시고 </span><span class="red">버스가 완전히 정차한후</span>
+      <span class="green">하차 해주시기 바랍니다.</span>
+    </div>
+    <div class="scroll-text" id="scroll-text-2">
+      <span class="red">*무제한 서울 대중교통 이용*</span><span class="green">모바일티머니 </span><span class="yellow">기후동행카드</span>
+    </div>
+    <div class="scroll-text" id="scroll-text-3">
+      <span class="yellow">차내 </span><span class="red">통화를 </span><span class="yellow">하실때는 </span><span class="red">귓속말로</span>
+      <span class="green"> 해주시고 </span><span class="yellow">옆 사람에게 </span><span class="red">방해가 </span><span class="green">되지 않도록 </span><span class="yellow">해주시기 </span><span class="red">바랍니다.</span>
+    </div>
+    <div class="scroll-text" id="scroll-text-4">
+      <span class="yellow">이 차량은 </span><span class="green">공기청정기</span><span class="yellow">를 가동하여 </span><span class="red">바이러스,세균 </span><span class="yellow">의 2차 감염을 </span><span class="green">예방 </span><span class="yellow">하고 있습니다.</span>
+    </div>
+    <div class="scroll-text" id="scroll-text-5">
+      <span class="orange">교통카드 </span><span class="red">잔액이 궁금할땐? </span><span class="orange">모바일티머니 앱! </span><span class="green">바로 충전도 가능해요~</span>
+    </div>
+    <div class="scroll-text" id="scroll-text-6">
+      <span class="orange">깨끗하고,</span><span class="red"> 안전하고,</span><span class="green"> 친절한 </span><span class="orange"> 서비스로 고객 여러분께 </span><span class="green"> 더욱 가까이 다가가겠습니다 </span><span class="orange"> . </span>
+    </div>
+    <div class="scroll-text" id="scroll-text-7">
+      <span class="red">안전을 위해</span><span class="orange"> 하차시 좌우 확인! <</span><span class="green">길을 건널때는</span><span class="red"> 횡단보도 이용</span><span class="orange">▶</span>
+    </div>
+    <div class="scroll-text" id="scroll-text-8">
+      <span class="orange">사람이 보이면 </span><span class="red"> 일단,멈춤!  "</span><span class="orange">한순간의 무단횡단,</span><span class="red">교통사고도 </span><span class="green">한순간입니다.</span>
+    </div>
+
+    <div class="third-top" id="third-top">
+      <span class="yellow">목동운수 </span><span class="green">양천</span><span class="red">01</span>
+    </div>
+    <div class="third-bottom" id="third-bottom">
+      <span class="green">첫차 </span><span class="red">05:30 </span><span class="green">막차 </span><span class="red">23:40</span>
+    </div>
+
+    <div class="fourth-top" id="fourth-top"></div>
+    <div class="fourth-bottom" id="fourth-bottom"></div>
+
+    <!-- 두 번째 디스플레이 요소들 -->
+    <div class="top-label" id="topLabel">이번 정류소</div>
+    <div class="scroll-lcd" id="scrollLcd">양평한신아파트, 9호선선유도역</div>
+    <div class="center-line" id="centerLine"></div>
+
+    <div class="grid-overlay" id="grid-overlay"></div>
+    <div class="location-display" id="locationDisplay">위치: 불명</div>
+  </div>
+
+  <!-- 제어 버튼들 -->
+  <div class="control-buttons">
+    <button class="control-btn active" id="display1Btn">안내 문구</button>
+    <button class="control-btn" id="display2Btn">정류소 안내</button>
+  </div>
+
+  <audio id="announcement" src="sunyudo.mp3"></audio>
+
+  <script>
+    // 전역 변수들
+    let currentDisplay = 1; // 1: 안내 문구, 2: 정류소 안내
+    let display1Interval;
+    let display2Timeout;
+    
+    // 첫 번째 디스플레이 관련 변수들
+    const scrollTexts = [
+      { id: 'scroll-text-1', duration: 24370 },
+      { id: 'scroll-text-2', duration: 10000 },
+      { id: 'scroll-text-3', duration: 17000 },
+      { id: 'scroll-text-4', duration: 15000 },
+      { id: 'scroll-text-5', duration: 13000 },
+      { id: 'scroll-text-6', duration: 15000 },
+      { id: 'scroll-text-7', duration: 11000 },
+      { id: 'scroll-text-8', duration: 13000 }
+    ];
+
+    const title = document.getElementById('title');
+    const thirdTop = document.getElementById('third-top');
+    const thirdBottom = document.getElementById('third-bottom');
+    const fourthTop = document.getElementById('fourth-top');
+    const fourthBottom = document.getElementById('fourth-bottom');
+    const locationDisplay = document.getElementById('locationDisplay');
+    const containerWidth = 1280;
+    const speed = 330;
+    let lastIndex = 0;
+    let currentSpeed = 31.4;
+    let inTarget = false;
+
+    // 두 번째 디스플레이 관련 변수들
+    const topLabel = document.getElementById('topLabel');
+    const scrollLcd = document.getElementById('scrollLcd');
+    const centerLine = document.getElementById('centerLine');
+    const audio = document.getElementById('announcement');
+
+    // 버튼 요소들
+    const display1Btn = document.getElementById('display1Btn');
+    const display2Btn = document.getElementById('display2Btn');
+
+    // 첫 번째 디스플레이 함수들
+    function randomNext() {
+      if (inTarget || currentDisplay !== 1) return;
+      let next;
+      do { next = Math.floor(Math.random() * 8) + 1; } while (next === lastIndex);
+      lastIndex = next;
+      showMessage(next);
+    }
+
+    function showMessage(index) {
+      if (currentDisplay !== 1) return;
+      
+      scrollTexts.forEach(item => document.getElementById(item.id).style.display = 'none');
+      thirdTop.style.display = 'none';
+      thirdBottom.style.display = 'none';
+      fourthTop.style.display = 'none';
+      fourthBottom.style.display = 'none';
+      title.style.display = 'flex';
+
+      if (index === 6) {
+        title.style.display = 'none';
+        thirdTop.style.display = 'block';
+        thirdBottom.style.display = 'block';
+        display1Interval = setTimeout(randomNext, 5000);
+        return;
+      }
+
+      if (index === 7) {
+        title.style.display = 'none';
+        thirdTop.style.display = 'block';
+        thirdBottom.style.display = 'block';
+        display1Interval = setTimeout(randomNext, 5000);
+        return;
+      }
+
+      const elem = document.getElementById(`scroll-text-${index}`);
+      elem.style.display = 'block';
+      const width = elem.scrollWidth;
+      const totalDistance = width + containerWidth;
+      const duration = totalDistance / speed;
+      elem.style.transform = `translateX(0)`;
+      elem.style.transition = 'none';
+
+      setTimeout(() => {
+        elem.style.transition = `transform ${duration}s linear`;
+        elem.style.transform = `translateX(-${totalDistance}px)`;
+      }, 500);
+
+      display1Interval = setTimeout(randomNext, scrollTexts[index - 1].duration);
+    }
+
+    // 두 번째 디스플레이 함수들
+    function startDisplay2() {
+      // 모든 첫 번째 디스플레이 요소 숨기기
+      title.style.display = 'none';
+      scrollTexts.forEach(item => document.getElementById(item.id).style.display = 'none');
+      thirdTop.style.display = 'none';
+      thirdBottom.style.display = 'none';
+      fourthTop.style.display = 'none';
+      fourthBottom.style.display = 'none';
+
+      // 두 번째 디스플레이 요소들 표시
+      topLabel.textContent = '이번 정류소';
+      topLabel.style.display = 'block';
+      scrollLcd.textContent = '양평한신아파트, 9호선선유도역';
+      scrollLcd.style.display = 'block';
+      centerLine.style.display = 'block';
+
+      const textWidth = scrollLcd.scrollWidth;
+      const totalDistance = textWidth + containerWidth;
+      const duration = totalDistance / speed;
+
+      scrollLcd.style.transform = 'translateX(0)';
+      scrollLcd.style.transition = 'none';
+      audio.volume = 1.0; // 볼륨을 최대로 설정 (0.0~1.0 범위)
+      
+      // 오디오 재생 시 오류 처리 추가
+      audio.play().catch(error => {
+        console.log('오디오 재생 실패:', error);
+        // 오디오 재생이 실패해도 계속 진행
+      });
+
+      setTimeout(() => {
+        scrollLcd.style.transition = `transform ${duration}s linear`;
+        scrollLcd.style.transform = `translateX(-${totalDistance}px)`;
+      }, 500);
+
+      // 5.38초 후 → 첫 화면 숨기고 → 다음 정류소 표시
+      display2Timeout = setTimeout(() => {
+        scrollLcd.style.display = 'none';
+        topLabel.style.display = 'none';
+        centerLine.style.display = 'none';
+
+        setTimeout(() => {
+          topLabel.textContent = '다음 정류소';
+          topLabel.style.color = 'lime';
+          topLabel.style.display = 'block';
+
+          scrollLcd.textContent = '지하철 2,9호선 당산역';
+          scrollLcd.style.color = 'yellow';
+          scrollLcd.style.left = '50%';
+          scrollLcd.style.top = '50%';
+          scrollLcd.style.transform = 'translateX(-50%) translateY(0%)';
+          scrollLcd.style.transition = 'none';
+          scrollLcd.style.display = 'block';
+
+          centerLine.style.display = 'block';
+        }, 500);
+      }, 5380);
+
+      // 12초 후 → 영어 안내로 교체
+      setTimeout(() => {
+        topLabel.textContent = 'THIS STOP IS';
+        topLabel.style.color = 'lime';
+        topLabel.style.display = 'block';
+
+        scrollLcd.textContent = 'Yangpyeong Hanshin Apt. Line 9 Seonyudo Station';
+        scrollLcd.style.color = 'yellow';
+        scrollLcd.style.left = '0';
+        scrollLcd.style.top = '50%';
+        scrollLcd.style.transform = 'translateY(0%)';
+        scrollLcd.style.transition = 'none';
+        scrollLcd.style.display = 'block';
+
+        const engTextWidth = scrollLcd.scrollWidth;
+        const engTotalDistance = engTextWidth + containerWidth;
+        const engDuration = engTotalDistance / speed;
+
+        setTimeout(() => {
+          scrollLcd.style.transition = `transform ${engDuration}s linear`;
+          scrollLcd.style.transform = `translate(-${engTotalDistance}px, 0%)`;
+        }, 500);
+      }, 12000);
+
+      // 21.85초 후 → 모두 숨김 (0.5초)
+      setTimeout(() => {
+        topLabel.style.display = 'none';
+        scrollLcd.style.display = 'none';
+        centerLine.style.display = 'none';
+
+        setTimeout(() => {
+          topLabel.textContent = 'NEXT STOP IS';
+          topLabel.style.color = 'lime';
+          topLabel.style.display = 'block';
+
+          scrollLcd.textContent = 'Line 2 Dangsan Station';
+          scrollLcd.style.color = 'yellow';
+          scrollLcd.style.left = '0';
+          scrollLcd.style.top = '50%';
+          scrollLcd.style.transform = 'translateY(0%)';
+          scrollLcd.style.transition = 'none';
+          scrollLcd.style.display = 'block';
+
+          centerLine.style.display = 'block';
+
+          const eng2Width = scrollLcd.scrollWidth;
+          const eng2TotalDistance = eng2Width + containerWidth;
+          const eng2Duration = eng2TotalDistance / speed;
+
+          setTimeout(() => {
+            scrollLcd.style.transition = `transform ${eng2Duration}s linear`;
+            scrollLcd.style.transform = `translate(-${eng2TotalDistance}px, 0%)`;
+            
+            // 정류소 안내 완료 후 안내 문구로 자동 전환
+            setTimeout(() => {
+              switchToDisplay1();
+            }, (eng2Duration + 0.5) * 1000);
+          }, 500);
+        }, 500);
+      }, 21850);
+    }
+
+    // 디스플레이 전환 함수들
+    function switchToDisplay1() {
+      currentDisplay = 1;
+      
+      // 두 번째 디스플레이 요소들 숨기기
+      topLabel.style.display = 'none';
+      scrollLcd.style.display = 'none';
+      centerLine.style.display = 'none';
+      
+      // 첫 번째 디스플레이 시작
+      randomNext();
+      
+      // 버튼 스타일 업데이트
+      display1Btn.classList.add('active');
+      display2Btn.classList.remove('active');
+    }
+
+    function switchToDisplay2() {
+      currentDisplay = 2;
+      
+      // 첫 번째 디스플레이 정지
+      if (display1Interval) {
+        clearTimeout(display1Interval);
+      }
+      
+      // 두 번째 디스플레이 시작
+      startDisplay2();
+      
+      // 버튼 스타일 업데이트
+      display2Btn.classList.add('active');
+      display1Btn.classList.remove('active');
+    }
+
+    // 이벤트 리스너
+    display1Btn.addEventListener('click', switchToDisplay1);
+    display2Btn.addEventListener('click', switchToDisplay2);
+
+    // GPS 위치 추적
+    navigator.geolocation.watchPosition(pos => {
+      const lat = pos.coords.latitude;
+      const lon = pos.coords.longitude;
+      locationDisplay.textContent = `위치: ${lat.toFixed(6)}, ${lon.toFixed(6)}`;
+    }, err => console.warn('GPS error:', err), { enableHighAccuracy: true });
+
+    // 격자 생성
+    const gridOverlay = document.getElementById('grid-overlay');
+    for (let i = 0; i < 128 * 32; i++) {
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      gridOverlay.appendChild(cell);
+    }
+
+    // 초기 디스플레이 시작
+    switchToDisplay1();
+  </script>
+</body>
+</html> 
