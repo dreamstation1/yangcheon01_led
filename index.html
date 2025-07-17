@@ -253,7 +253,7 @@
     const topLabel = document.getElementById('topLabel');
     const scrollLcd = document.getElementById('scrollLcd');
     const centerLine = document.getElementById('centerLine');
-    const audio = document.getElementById('announcement');
+    const audio = document.getElementById('announcement'); // null일 수 있음
 
     // 버튼 요소들
     const display1Btn = document.getElementById('display1Btn');
@@ -312,6 +312,8 @@
 
     // 두 번째 디스플레이 함수들
     function startDisplay2() {
+      console.log('startDisplay2 함수 시작');
+      
       // 모든 첫 번째 디스플레이 요소 숨기기
       title.style.display = 'none';
       scrollTexts.forEach(item => document.getElementById(item.id).style.display = 'none');
@@ -319,6 +321,7 @@
       thirdBottom.style.display = 'none';
       fourthTop.style.display = 'none';
       fourthBottom.style.display = 'none';
+      console.log('첫 번째 디스플레이 요소들 숨김 완료');
 
       // 두 번째 디스플레이 요소들 표시
       topLabel.textContent = '이번 정류소';
@@ -326,6 +329,7 @@
       scrollLcd.textContent = '양평한신아파트, 9호선선유도역';
       scrollLcd.style.display = 'block';
       centerLine.style.display = 'block';
+      console.log('두 번째 디스플레이 요소들 표시 완료: 이번 정류소 - 양평한신아파트, 9호선선유도역');
 
       const textWidth = scrollLcd.scrollWidth;
       const totalDistance = textWidth + containerWidth;
@@ -333,13 +337,17 @@
 
       scrollLcd.style.transform = 'translateX(0)';
       scrollLcd.style.transition = 'none';
-      audio.volume = 1.0; // 볼륨을 최대로 설정 (0.0~1.0 범위)
       
-      // 오디오 재생 시 오류 처리 추가
-      audio.play().catch(error => {
-        console.log('오디오 재생 실패:', error);
-        // 오디오 재생이 실패해도 계속 진행
-      });
+      // 오디오 재생 (사용자 상호작용 후에만)
+      if (userInteracted) {
+        audio.volume = 1.0;
+        audio.play().catch(error => {
+          console.log('오디오 재생 실패:', error);
+          // 오디오 재생이 실패해도 계속 진행
+        });
+      } else {
+        console.log('사용자 상호작용이 없어서 오디오 재생 건너뜀');
+      }
 
       setTimeout(() => {
         scrollLcd.style.transition = `transform ${duration}s linear`;
@@ -449,31 +457,109 @@
     }
 
     function switchToDisplay2() {
+      console.log('switchToDisplay2 함수 호출됨');
       currentDisplay = 2;
       
       // 첫 번째 디스플레이 정지
       if (display1Interval) {
         clearTimeout(display1Interval);
+        console.log('첫 번째 디스플레이 타이머 정지됨');
       }
       
       // 두 번째 디스플레이 시작
+      console.log('두 번째 디스플레이 시작...');
       startDisplay2();
       
       // 버튼 스타일 업데이트
       display2Btn.classList.add('active');
       display1Btn.classList.remove('active');
+      console.log('버튼 스타일 업데이트 완료');
     }
 
     // 이벤트 리스너
     display1Btn.addEventListener('click', switchToDisplay1);
-    display2Btn.addEventListener('click', switchToDisplay2);
+    display2Btn.addEventListener('click', () => {
+      // 정류소 안내 버튼 클릭 시 사용자 상호작용으로 간주
+      if (!userInteracted) {
+        userInteracted = true;
+        console.log('정류소 안내 버튼 클릭으로 사용자 상호작용 감지');
+        if (audio) {
+          audio.load();
+        }
+      }
+      switchToDisplay2();
+    });
+    
+    // 오디오 자동 재생을 위한 사용자 상호작용 감지
+    let userInteracted = false;
+    
+    // 페이지 클릭 시 오디오 재생 허용
+    document.addEventListener('click', function() {
+      if (!userInteracted) {
+        userInteracted = true;
+        console.log('사용자 상호작용 감지: 오디오 재생 가능');
+        // 오디오를 미리 로드
+        if (audio) {
+          audio.load();
+        }
+      }
+    }, { once: true });
 
+    // 목표 위치 (정류소 위치)
+    const targetLat = 37.539756;
+    const targetLon = 126.887565;
+    const targetRadius = 500; // 500미터 반경
+    
+    // 두 지점 간의 거리 계산 함수 (미터 단위)
+    function calculateDistance(lat1, lon1, lat2, lon2) {
+      const R = 6371000; // 지구 반지름 (미터)
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      return R * c;
+    }
+    
     // GPS 위치 추적
     navigator.geolocation.watchPosition(pos => {
       const lat = pos.coords.latitude;
       const lon = pos.coords.longitude;
-      locationDisplay.textContent = `위치: ${lat.toFixed(6)}, ${lon.toFixed(6)}`;
-    }, err => console.warn('GPS error:', err), { enableHighAccuracy: true });
+      const distance = calculateDistance(lat, lon, targetLat, targetLon);
+      
+      locationDisplay.textContent = `위치: ${lat.toFixed(6)}, ${lon.toFixed(6)} (거리: ${distance.toFixed(0)}m)`;
+      
+      // 디버깅을 위한 로그 추가
+      console.log(`현재 거리: ${distance.toFixed(0)}m, 목표 반경: ${targetRadius}m, 현재 디스플레이: ${currentDisplay}`);
+      
+      // 목표 위치 500m 이내에 있고, 현재 안내 문구 모드일 때 자동으로 정류소 안내 시작
+      if (distance <= targetRadius && currentDisplay === 1) {
+        console.log('정류소 근처 도착! 자동으로 정류소 안내 시작');
+        switchToDisplay2();
+      }
+    }, err => {
+      console.warn('GPS error:', err);
+    }, { enableHighAccuracy: true });
+
+    // 항상 테스트 버튼 표시 (GPS 오류와 관계없이)
+    const testBtn = document.createElement('button');
+    testBtn.id = 'testBtn';
+    testBtn.textContent = '테스트: 정류소 안내 시작';
+    testBtn.style.cssText = 'position: fixed; top: 10px; right: 10px; z-index: 1000; padding: 10px; background: red; color: white; border: none; border-radius: 5px; cursor: pointer;';
+    testBtn.onclick = () => {
+      console.log('테스트 버튼 클릭: 정류소 안내 시작');
+      // 테스트 버튼 클릭 시 사용자 상호작용으로 간주
+      if (!userInteracted) {
+        userInteracted = true;
+        console.log('테스트 버튼 클릭으로 사용자 상호작용 감지');
+        if (audio) {
+          audio.load();
+        }
+      }
+      switchToDisplay2();
+    };
+    document.body.appendChild(testBtn);
 
     // 격자 생성
     const gridOverlay = document.getElementById('grid-overlay');
