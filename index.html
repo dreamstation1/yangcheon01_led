@@ -23,93 +23,16 @@
       align-items: center;
       margin: 0;
       background-color: white;
-      min-height: 100vh;
+      height: 100vh;
       gap: 20px;
-      padding: 10px;
-      box-sizing: border-box;
     }
     .square {
       position: relative;
-      width: 100%;
-      max-width: 1280px;
+      width: 1280px;
       height: 320px;
       background-color: rgb(33, 33, 33);
       border: 20px solid rgb(20, 20, 20);
       overflow: hidden;
-      box-sizing: border-box;
-    }
-    
-    /* 모바일 반응형 */
-    @media (max-width: 768px) {
-      body {
-        padding: 5px;
-        gap: 10px;
-      }
-      .square {
-        height: 200px;
-        border: 10px solid rgb(20, 20, 20);
-      }
-      .title {
-        font-size: 60px;
-      }
-      .title span {
-        margin: 0 30px;
-      }
-      .scroll-text {
-        font-size: 60px;
-        bottom: 10px;
-      }
-      .third-top, .third-bottom, .fourth-top, .fourth-bottom {
-        font-size: 50px;
-      }
-      .top-label {
-        font-size: 55px;
-      }
-      .scroll-lcd {
-        font-size: 55px;
-      }
-      .control-btn {
-        padding: 8px 16px;
-        font-size: 14px;
-      }
-      .location-display {
-        font-size: 16px;
-        padding: 2px 6px;
-      }
-    }
-    
-    @media (max-width: 480px) {
-      .square {
-        height: 150px;
-        border: 8px solid rgb(20, 20, 20);
-      }
-      .title {
-        font-size: 40px;
-      }
-      .title span {
-        margin: 0 20px;
-      }
-      .scroll-text {
-        font-size: 40px;
-        bottom: 8px;
-      }
-      .third-top, .third-bottom, .fourth-top, .fourth-bottom {
-        font-size: 35px;
-      }
-      .top-label {
-        font-size: 40px;
-      }
-      .scroll-lcd {
-        font-size: 40px;
-      }
-      .control-btn {
-        padding: 6px 12px;
-        font-size: 12px;
-      }
-      .location-display {
-        font-size: 14px;
-        padding: 1px 4px;
-      }
     }
     .grid-overlay {
       position: absolute;
@@ -637,8 +560,8 @@
     // 항상 테스트 버튼 표시 (GPS 오류와 관계없이)
     const testBtn = document.createElement('button');
     testBtn.id = 'testBtn';
-    testBtn.textContent = '🔊 정류소 안내 시작';
-    testBtn.style.cssText = 'position: fixed; top: 10px; right: 10px; z-index: 1000; padding: 10px 15px; background: #ff4444; color: white; border: 2px solid #cc0000; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.3);';
+    testBtn.textContent = '🔊 정류소 안내 시작 (오디오 포함)';
+    testBtn.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 1000; padding: 15px 20px; background: #ff4444; color: white; border: 3px solid #cc0000; border-radius: 10px; cursor: pointer; font-size: 16px; font-weight: bold; box-shadow: 0 4px 8px rgba(0,0,0,0.3);';
     testBtn.onclick = () => {
       console.log('테스트 버튼 클릭: 정류소 안내 시작');
       // 테스트 버튼 클릭 시 사용자 상호작용으로 간주
@@ -657,7 +580,7 @@
     const audioBtn = document.createElement('button');
     audioBtn.id = 'audioBtn';
     audioBtn.textContent = '🔊 오디오 활성화';
-    audioBtn.style.cssText = 'position: fixed; top: 60px; right: 10px; z-index: 1000; padding: 8px 12px; background: #44aa44; color: white; border: 2px solid #228822; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: bold;';
+    audioBtn.style.cssText = 'position: fixed; top: 80px; right: 20px; z-index: 1000; padding: 10px 15px; background: #44aa44; color: white; border: 2px solid #228822; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: bold;';
     audioBtn.onclick = () => {
       if (!userInteracted) {
         userInteracted = true;
