@@ -23,43 +23,16 @@
       align-items: center;
       margin: 0;
       background-color: white;
-      min-height: 100vh;
+      height: 100vh;
       gap: 20px;
-      padding: 10px;
-      box-sizing: border-box;
     }
     .square {
       position: relative;
-      width: 100%;
-      max-width: 1280px;
+      width: 1280px;
       height: 320px;
       background-color: rgb(33, 33, 33);
       border: 20px solid rgb(20, 20, 20);
       overflow: hidden;
-      box-sizing: border-box;
-    }
-    
-    /* 모바일에서만 간단한 조정 */
-    @media (max-width: 768px) {
-      .square {
-        height: 200px;
-        border: 10px solid rgb(20, 20, 20);
-      }
-      .title {
-        font-size: 60px;
-      }
-      .scroll-text {
-        font-size: 60px;
-      }
-      .third-top, .third-bottom, .fourth-top, .fourth-bottom {
-        font-size: 50px;
-      }
-      .top-label {
-        font-size: 55px;
-      }
-      .scroll-lcd {
-        font-size: 55px;
-      }
     }
     .grid-overlay {
       position: absolute;
