@@ -508,7 +508,7 @@
     // 목표 위치 (정류소 위치)
     const targetLat = 37.539756;
     const targetLon = 126.887565;
-    const targetRadius = 500; // 500미터 반경
+    const targetRadius = 100; // 500미터 반경
     
     // 두 지점 간의 거리 계산 함수 (미터 단위)
     function calculateDistance(lat1, lon1, lat2, lon2) {
@@ -533,10 +533,17 @@
       // 디버깅을 위한 로그 추가
       console.log(`현재 거리: ${distance.toFixed(0)}m, 목표 반경: ${targetRadius}m, 현재 디스플레이: ${currentDisplay}`);
       
-      // 목표 위치 500m 이내에 있고, 현재 안내 문구 모드일 때 자동으로 정류소 안내 시작
+      // 목표 위치 100m 이내에 있고, 현재 안내 문구 모드일 때 자동으로 정류소 안내 시작
       if (distance <= targetRadius && currentDisplay === 1) {
-        console.log('정류소 근처 도착! 자동으로 정류소 안내 시작');
+        console.log(`정류소 근처 도착! (거리: ${distance.toFixed(0)}m) 자동으로 정류소 안내 시작`);
         switchToDisplay2();
+      }
+      
+      // 100m 밖으로 나가면 안내 문구로 돌아가기 (디버깅용)
+      if (distance > targetRadius && currentDisplay === 2) {
+        console.log(`정류소에서 멀어짐! (거리: ${distance.toFixed(0)}m) 안내 문구로 돌아가기`);
+        // 주의: 이 기능은 테스트용이므로 실제 사용 시에는 주석 처리하세요
+        // switchToDisplay1();
       }
     }, err => {
       console.warn('GPS error:', err);
@@ -545,8 +552,8 @@
     // 항상 테스트 버튼 표시 (GPS 오류와 관계없이)
     const testBtn = document.createElement('button');
     testBtn.id = 'testBtn';
-    testBtn.textContent = '테스트: 정류소 안내 시작';
-    testBtn.style.cssText = 'position: fixed; top: 10px; right: 10px; z-index: 1000; padding: 10px; background: red; color: white; border: none; border-radius: 5px; cursor: pointer;';
+    testBtn.textContent = '🔊 정류소 안내 시작 (오디오 포함)';
+    testBtn.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 1000; padding: 15px 20px; background: #ff4444; color: white; border: 3px solid #cc0000; border-radius: 10px; cursor: pointer; font-size: 16px; font-weight: bold; box-shadow: 0 4px 8px rgba(0,0,0,0.3);';
     testBtn.onclick = () => {
       console.log('테스트 버튼 클릭: 정류소 안내 시작');
       // 테스트 버튼 클릭 시 사용자 상호작용으로 간주
@@ -560,6 +567,27 @@
       switchToDisplay2();
     };
     document.body.appendChild(testBtn);
+    
+    // 추가로 오디오 활성화 버튼도 표시
+    const audioBtn = document.createElement('button');
+    audioBtn.id = 'audioBtn';
+    audioBtn.textContent = '🔊 오디오 활성화';
+    audioBtn.style.cssText = 'position: fixed; top: 80px; right: 20px; z-index: 1000; padding: 10px 15px; background: #44aa44; color: white; border: 2px solid #228822; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: bold;';
+    audioBtn.onclick = () => {
+      if (!userInteracted) {
+        userInteracted = true;
+        console.log('오디오 활성화 버튼 클릭으로 사용자 상호작용 감지');
+        if (audio) {
+          audio.load();
+        }
+        audioBtn.textContent = '✅ 오디오 활성화됨';
+        audioBtn.style.background = '#228822';
+        setTimeout(() => {
+          audioBtn.style.display = 'none';
+        }, 2000);
+      }
+    };
+    document.body.appendChild(audioBtn);
 
     // 격자 생성
     const gridOverlay = document.getElementById('grid-overlay');
