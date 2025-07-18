@@ -148,6 +148,8 @@
     .control-buttons {
       display: flex;
       gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
     }
     .control-btn {
       padding: 10px 20px;
@@ -167,6 +169,32 @@
     .control-btn.active {
       background-color: #007bff;
       border-color: #0056b3;
+    }
+    
+    /* 구형/신형 버튼 스타일 */
+    .model-buttons {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .model-btn {
+      padding: 8px 16px;
+      font-size: 14px;
+      font-family: 'HY견고딕', sans-serif;
+      background-color: #555;
+      color: white;
+      border: 2px solid #777;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .model-btn:hover {
+      background-color: #777;
+      border-color: #999;
+    }
+    .model-btn.active {
+      background-color: #37d85c;
+      border-color: #17b63c;
     }
   </style>
 </head>
@@ -225,22 +253,30 @@
   
   <div class="location-display" id="locationDisplay">위치: 불명</div>
 
+  <!-- 구형/신형 선택 버튼들 -->
+  <div class="model-buttons">
+    <button class="model-btn" id="oldModelBtn">구형</button>
+    <button class="model-btn active" id="newModelBtn">신형</button>
+  </div>
+
   <!-- 제어 버튼들 -->
   <div class="control-buttons">
     <button class="control-btn active" id="display1Btn">안내 문구</button>
     <button class="control-btn" id="display2Btn">정류소 안내</button>
   </div>
 
-  <audio id="announcement" src="sunyudo.mp3"></audio>
-  <audio id="dangsanAudio" src="dangsan.mp3"></audio>
-  <audio id="mok6Audio" src="mok6.mp3"></audio>
-  <audio id="mok5bAudio" src="mok5b.wav"></audio>
-  <audio id="mok5cAudio" src="paris.wav"></audio>
-  <audio id="mokStadiumAudio" src="mok5c.wav"></audio>
+  <!-- 오디오 파일들 (파일이 없어도 작동하도록 설정) -->
+  <audio id="announcement" src="sunyudo.mp3" preload="none"></audio>
+  <audio id="dangsanAudio" src="dangsan.mp3" preload="none"></audio>
+  <audio id="mok6Audio" src="mok6.mp3" preload="none"></audio>
+  <audio id="mok5bAudio" src="mok5b.wav" preload="none"></audio>
+  <audio id="mok5cAudio" src="paris.wav" preload="none"></audio>
+  <audio id="mokStadiumAudio" src="mok5c.wav" preload="none"></audio>
 
   <script>
     // 전역 변수들
     let currentDisplay = 1; // 1: 안내 문구, 2: 정류소 안내
+    let currentModel = 'new'; // 'old': 구형, 'new': 신형
     let display1Interval;
     let display2Timeout;
     
@@ -277,7 +313,61 @@
     // 버튼 요소들
     const display1Btn = document.getElementById('display1Btn');
     const display2Btn = document.getElementById('display2Btn');
+    const oldModelBtn = document.getElementById('oldModelBtn');
+    const newModelBtn = document.getElementById('newModelBtn');
 
+    // 색상 변경 함수들
+    function updateColors() {
+      const yellowElements = document.querySelectorAll('.yellow');
+      const orangeElements = document.querySelectorAll('.orange');
+      const greenElements = document.querySelectorAll('.green');
+      
+      if (currentModel === 'old') {
+        // 구형: 노란색 → 주황색, 주황색 → 주황색 유지, 초록색 → 진한 초록색
+        yellowElements.forEach(el => {
+          el.style.color = 'orange';
+        });
+        orangeElements.forEach(el => {
+          el.style.color = 'orange';
+        });
+        greenElements.forEach(el => {
+          el.style.color = '#37d85c'; // 밝은 초록색
+        });
+      } else {
+        // 신형: 노란색 → 노란색 유지, 주황색 → 노란색, 초록색 → 밝은 초록색
+        yellowElements.forEach(el => {
+          el.style.color = 'yellow';
+        });
+        orangeElements.forEach(el => { 
+          el.style.color = 'yellow';
+        });
+        greenElements.forEach(el => {
+          el.style.color = 'lime';
+        });
+      }
+      
+      // 정류소 안내 요소들의 색상도 업데이트
+      if (currentDisplay === 2) {
+        if (currentModel === 'old') {
+          // 구형: 노란색 → 주황색, 초록색 → 밝은 초록색
+          if (scrollLcd.style.color === 'yellow') {
+            scrollLcd.style.color = 'orange';
+          }
+          if (topLabel.style.color === 'lime') {
+            topLabel.style.color = '#37d85c';
+          }
+        } else {
+          // 신형: 주황색 → 노란색, 초록색 → 밝은 초록색
+          if (scrollLcd.style.color === 'orange') {
+            scrollLcd.style.color = 'yellow';
+          }
+          if (topLabel.style.color === '#37d85c') {
+            topLabel.style.color = 'lime';
+          }
+        }
+      }
+    }
+    
     // 첫 번째 디스플레이 함수들
     function randomNext() {
       if (inTarget || currentDisplay !== 1) return;
@@ -301,6 +391,7 @@
         title.style.display = 'none';
         thirdTop.style.display = 'block';
         thirdBottom.style.display = 'block';
+        updateColors(); // 색상 업데이트
         display1Interval = setTimeout(randomNext, 5000);
         return;
       }
@@ -309,12 +400,14 @@
         title.style.display = 'none';
         thirdTop.style.display = 'block';
         thirdBottom.style.display = 'block';
+        updateColors(); // 색상 업데이트
         display1Interval = setTimeout(randomNext, 5000);
         return;
       }
 
       const elem = document.getElementById(`scroll-text-${index}`);
       elem.style.display = 'block';
+      updateColors(); // 색상 업데이트
       const width = elem.scrollWidth;
       const totalDistance = width + containerWidth;
       const duration = totalDistance / speed;
@@ -344,10 +437,13 @@
 
       // 두 번째 디스플레이 요소들 표시
       topLabel.textContent = '이번 정류소';
+      topLabel.style.color = currentModel === 'old' ? '#37d85c' : 'lime';
       topLabel.style.display = 'block';
       scrollLcd.textContent = '양평한신아파트, 9호선선유도역';
+      scrollLcd.style.color = currentModel === 'old' ? 'orange' : 'yellow';
       scrollLcd.style.display = 'block';
       centerLine.style.display = 'block';
+      updateColors(); // 색상 업데이트
       console.log('두 번째 디스플레이 요소들 표시 완료: 이번 정류소 - 양평한신아파트, 9호선선유도역');
 
       const textWidth = scrollLcd.scrollWidth;
@@ -358,15 +454,7 @@
       scrollLcd.style.transition = 'none';
       
       // 오디오 재생 (사용자 상호작용 후에만)
-      if (userInteracted) {
-        audio.volume = 1.0;
-        audio.play().catch(error => {
-          console.log('오디오 재생 실패:', error);
-          // 오디오 재생이 실패해도 계속 진행
-        });
-      } else {
-        console.log('사용자 상호작용이 없어서 오디오 재생 건너뜀');
-      }
+      playAudioSafely('announcement');
 
       setTimeout(() => {
         scrollLcd.style.transition = `transform ${duration}s linear`;
@@ -381,11 +469,11 @@
 
         setTimeout(() => {
           topLabel.textContent = '다음 정류소';
-          topLabel.style.color = 'lime';
+          topLabel.style.color = currentModel === 'old' ? '#37d85c' : 'lime';
           topLabel.style.display = 'block';
 
           scrollLcd.textContent = '지하철 2,9호선 당산역';
-          scrollLcd.style.color = 'yellow';
+          scrollLcd.style.color = currentModel === 'old' ? 'orange' : 'yellow';
           scrollLcd.style.left = '50%';
           scrollLcd.style.top = '50%';
           scrollLcd.style.transform = 'translateX(-50%) translateY(0%)';
@@ -393,22 +481,24 @@
           scrollLcd.style.display = 'block';
 
           centerLine.style.display = 'block';
+          updateColors(); // 색상 업데이트
         }, 500);
       }, 5380);
 
       // 12초 후 → 영어 안내로 교체
       setTimeout(() => {
         topLabel.textContent = 'THIS STOP IS';
-        topLabel.style.color = 'lime';
+        topLabel.style.color = currentModel === 'old' ? '#37d85c' : 'lime';
         topLabel.style.display = 'block';
 
         scrollLcd.textContent = 'Yangpyeong Hanshin Apt. Line 9 Seonyudo Station';
-        scrollLcd.style.color = 'yellow';
+        scrollLcd.style.color = currentModel === 'old' ? 'orange' : 'yellow';
         scrollLcd.style.left = '0';
         scrollLcd.style.top = '50%';
         scrollLcd.style.transform = 'translateY(0%)';
         scrollLcd.style.transition = 'none';
         scrollLcd.style.display = 'block';
+        updateColors(); // 색상 업데이트
 
         const engTextWidth = scrollLcd.scrollWidth;
         const engTotalDistance = engTextWidth + containerWidth;
@@ -428,11 +518,11 @@
 
         setTimeout(() => {
           topLabel.textContent = 'NEXT STOP IS';
-          topLabel.style.color = 'lime';
+          topLabel.style.color = currentModel === 'old' ? '#37d85c' : 'lime';
           topLabel.style.display = 'block';
 
           scrollLcd.textContent = 'Line 2 Dangsan Station';
-          scrollLcd.style.color = 'yellow';
+          scrollLcd.style.color = currentModel === 'old' ? 'orange' : 'yellow';
           scrollLcd.style.left = '0';
           scrollLcd.style.top = '50%';
           scrollLcd.style.transform = 'translateY(0%)';
@@ -440,6 +530,7 @@
           scrollLcd.style.display = 'block';
 
           centerLine.style.display = 'block';
+          updateColors(); // 색상 업데이트
 
           const eng2Width = scrollLcd.scrollWidth;
           const eng2TotalDistance = eng2Width + containerWidth;
@@ -473,6 +564,9 @@
       // 버튼 스타일 업데이트
       display1Btn.classList.add('active');
       display2Btn.classList.remove('active');
+      
+      // 색상 업데이트
+      updateColors();
     }
 
     // 정류소별 안내 함수
@@ -496,10 +590,13 @@
       
       // 두 번째 디스플레이 요소들 표시
       topLabel.textContent = '이번 정류소';
+      topLabel.style.color = currentModel === 'old' ? '#37d85c' : 'lime';
       topLabel.style.display = 'block';
       scrollLcd.textContent = station.displayText;
+      scrollLcd.style.color = currentModel === 'old' ? 'orange' : 'yellow';
       scrollLcd.style.display = 'block';
       centerLine.style.display = 'block';
+      updateColors(); // 색상 업데이트
       
       // 목동5단지B상가와 목5동주민센터는 가운데 정렬, 나머지는 스크롤
       if (station.name === '목동5단지B상가' || station.name === '목동5단지C상가') {
@@ -524,15 +621,7 @@
       }
       
       // 해당 정류소 오디오 재생
-      const stationAudio = document.getElementById(station.audio);
-      if (userInteracted && stationAudio) {
-        stationAudio.volume = 1.0;
-        stationAudio.play().catch(error => {
-          console.log(`${station.name} 오디오 재생 실패:`, error);
-        });
-      } else {
-        console.log('사용자 상호작용이 없어서 오디오 재생 건너뜀');
-      }
+      playAudioSafely(station.audio);
 
       // 5.38초 후 → 첫 화면 숨기고 → 다음 정류소 표시
       display2Timeout = setTimeout(() => {
@@ -542,7 +631,7 @@
 
         setTimeout(() => {
           topLabel.textContent = '다음 정류소';
-          topLabel.style.color = 'lime';
+          topLabel.style.color = currentModel === 'old' ? '#37d85c' : 'lime';
           topLabel.style.display = 'block';
 
           // 다음 정류소 텍스트 설정
@@ -562,7 +651,7 @@
           }
           
           scrollLcd.textContent = nextStationText;
-          scrollLcd.style.color = 'yellow';
+          scrollLcd.style.color = currentModel === 'old' ? 'orange' : 'yellow';
           scrollLcd.style.display = 'block';
 
           // 다음 정류소가 목동5단지B상가, 목5동주민센터, 목동야구장인 경우 가운데 정렬
@@ -589,13 +678,14 @@
           }
 
           centerLine.style.display = 'block';
+          updateColors(); // 색상 업데이트
         }, 500);
       }, 5380);
 
       // 12초 후 → 영어 안내로 교체
       setTimeout(() => {
         topLabel.textContent = 'THIS STOP IS';
-        topLabel.style.color = 'lime';
+        topLabel.style.color = currentModel === 'old' ? '#37d85c' : 'lime';
         topLabel.style.display = 'block';
 
         // 영어 텍스트 설정
@@ -615,12 +705,13 @@
         }
 
         scrollLcd.textContent = engText;
-        scrollLcd.style.color = 'yellow';
+        scrollLcd.style.color = currentModel === 'old' ? 'orange' : 'yellow';
         scrollLcd.style.left = '0';
         scrollLcd.style.top = '50%';
         scrollLcd.style.transform = 'translateY(0%)';
         scrollLcd.style.transition = 'none';
         scrollLcd.style.display = 'block';
+        updateColors(); // 색상 업데이트
 
         const engTextWidth = scrollLcd.scrollWidth;
         const engTotalDistance = engTextWidth + containerWidth;
@@ -640,7 +731,7 @@
 
         setTimeout(() => {
           topLabel.textContent = 'NEXT STOP IS';
-          topLabel.style.color = 'lime';
+          topLabel.style.color = currentModel === 'old' ? '#37d85c' : 'lime';
           topLabel.style.display = 'block';
 
           // 영어 다음 정류소 텍스트 설정
@@ -660,7 +751,7 @@
           }
 
           scrollLcd.textContent = engNextText;
-          scrollLcd.style.color = 'yellow';
+          scrollLcd.style.color = currentModel === 'old' ? 'orange' : 'yellow';
           scrollLcd.style.left = '0';
           scrollLcd.style.top = '50%';
           scrollLcd.style.transform = 'translateY(0%)';
@@ -668,6 +759,7 @@
           scrollLcd.style.display = 'block';
 
           centerLine.style.display = 'block';
+          updateColors(); // 색상 업데이트
 
           const eng2Width = scrollLcd.scrollWidth;
           const eng2TotalDistance = eng2Width + containerWidth;
@@ -688,12 +780,15 @@
       // 버튼 스타일 업데이트
       display2Btn.classList.add('active');
       display1Btn.classList.remove('active');
+      
+      // 색상 업데이트
+      updateColors();
     }
 
     function switchToDisplay2() {
       console.log('switchToDisplay2 함수 호출됨');
-      // 기본적으로 목동6단지상가로 시작
-      startStationAnnouncement(stations[0]);
+      // 기본적으로 선유도역으로 시작 (startDisplay2 함수 사용)
+      startDisplay2();
     }
 
     // 이벤트 리스너
@@ -710,18 +805,58 @@
       switchToDisplay2();
     });
     
+    // 구형/신형 버튼 이벤트 리스너
+    oldModelBtn.addEventListener('click', () => {
+      currentModel = 'old';
+      oldModelBtn.classList.add('active');
+      newModelBtn.classList.remove('active');
+      updateColors();
+      console.log('구형 모드로 변경');
+    });
+    
+    newModelBtn.addEventListener('click', () => {
+      currentModel = 'new';
+      newModelBtn.classList.add('active');
+      oldModelBtn.classList.remove('active');
+      updateColors();
+      console.log('신형 모드로 변경');
+    });
+    
     // 오디오 자동 재생을 위한 사용자 상호작용 감지
     let userInteracted = false;
+    
+    // 안전한 오디오 재생 함수
+    function playAudioSafely(audioId) {
+      if (!userInteracted) {
+        console.log('사용자 상호작용이 없어서 오디오 재생 건너뜀');
+        return;
+      }
+      
+      const audioElement = document.getElementById(audioId);
+      if (!audioElement) {
+        console.log(`오디오 요소를 찾을 수 없음: ${audioId}`);
+        return;
+      }
+      
+      audioElement.volume = 1.0;
+      audioElement.play().catch(error => {
+        console.log(`오디오 재생 실패 (${audioId}):`, error);
+      });
+    }
     
     // 페이지 클릭 시 오디오 재생 허용
     document.addEventListener('click', function() {
       if (!userInteracted) {
         userInteracted = true;
         console.log('사용자 상호작용 감지: 오디오 재생 가능');
-        // 오디오를 미리 로드
-        if (audio) {
-          audio.load();
-        }
+        // 모든 오디오를 미리 로드
+        const allAudios = ['announcement', 'dangsanAudio', 'mok6Audio', 'mok5bAudio', 'mok5cAudio', 'mokStadiumAudio'];
+        allAudios.forEach(audioId => {
+          const audioElement = document.getElementById(audioId);
+          if (audioElement) {
+            audioElement.load();
+          }
+        });
       }
     }, { once: true });
 
@@ -835,10 +970,7 @@
       if (!userInteracted) {
         userInteracted = true;
         console.log('목동야구장 테스트 버튼 클릭으로 사용자 상호작용 감지');
-        const mokStadiumAudio = document.getElementById('mokStadiumAudio');
-        if (mokStadiumAudio) {
-          mokStadiumAudio.load();
-        }
+        playAudioSafely('mokStadiumAudio');
       }
       startStationAnnouncement(stations[0]);
     };
@@ -852,10 +984,7 @@
       if (!userInteracted) {
         userInteracted = true;
         console.log('목동5단지C상가 테스트 버튼 클릭으로 사용자 상호작용 감지');
-        const mok5cAudio = document.getElementById('mok5cAudio');
-        if (mok5cAudio) {
-          mok5cAudio.load();
-        }
+        playAudioSafely('mok5cAudio');
       }
       startStationAnnouncement(stations[1]);
     };
@@ -869,10 +998,7 @@
       if (!userInteracted) {
         userInteracted = true;
         console.log('목동5단지B상가 테스트 버튼 클릭으로 사용자 상호작용 감지');
-        const mok5bAudio = document.getElementById('mok5bAudio');
-        if (mok5bAudio) {
-          mok5bAudio.load();
-        }
+        playAudioSafely('mok5bAudio');
       }
       startStationAnnouncement(stations[2]);
     };
@@ -886,10 +1012,7 @@
       if (!userInteracted) {
         userInteracted = true;
         console.log('목동6단지상가 테스트 버튼 클릭으로 사용자 상호작용 감지');
-        const mok6Audio = document.getElementById('mok6Audio');
-        if (mok6Audio) {
-          mok6Audio.load();
-        }
+        playAudioSafely('mok6Audio');
       }
       startStationAnnouncement(stations[3]);
     };
@@ -903,10 +1026,7 @@
       if (!userInteracted) {
         userInteracted = true;
         console.log('선유도역 테스트 버튼 클릭으로 사용자 상호작용 감지');
-        const audio = document.getElementById('announcement');
-        if (audio) {
-          audio.load();
-        }
+        playAudioSafely('announcement');
       }
       startStationAnnouncement(stations[4]);
     };
@@ -920,10 +1040,7 @@
       if (!userInteracted) {
         userInteracted = true;
         console.log('당산역 테스트 버튼 클릭으로 사용자 상호작용 감지');
-        const dangsanAudio = document.getElementById('dangsanAudio');
-        if (dangsanAudio) {
-          dangsanAudio.load();
-        }
+        playAudioSafely('dangsanAudio');
       }
       startStationAnnouncement(stations[5]);
     };
@@ -945,9 +1062,14 @@
       if (!userInteracted) {
         userInteracted = true;
         console.log('오디오 활성화 버튼 클릭으로 사용자 상호작용 감지');
-        if (audio) {
-          audio.load();
-        }
+        // 모든 오디오를 미리 로드
+        const allAudios = ['announcement', 'dangsanAudio', 'mok6Audio', 'mok5bAudio', 'mok5cAudio', 'mokStadiumAudio'];
+        allAudios.forEach(audioId => {
+          const audioElement = document.getElementById(audioId);
+          if (audioElement) {
+            audioElement.load();
+          }
+        });
         audioBtn.textContent = '✅ 오디오 활성화됨';
         audioBtn.style.background = '#228822';
         setTimeout(() => {
@@ -965,6 +1087,9 @@
       gridOverlay.appendChild(cell);
     }
 
+    // 초기 색상 적용
+    updateColors();
+    
     // 초기 디스플레이 시작
     switchToDisplay1();
   </script>
